@@ -7,15 +7,15 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'bin_calc'",
+            "name": "Debug executable 'binary_calculator'",
             "cargo": {
                 "args": [
                     "build",
-                    "--bin=bin_calc",
-                    "--package=bin_calc"
+                    "--bin=binary_calculator",
+                    "--package=binary_calculator"
                 ],
                 "filter": {
-                    "name": "bin_calc",
+                    "name": "binary_calculator",
                     "kind": "bin"
                 }
             },
@@ -25,16 +25,16 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in executable 'bin_calc'",
+            "name": "Debug unit tests in executable 'binary_calculator'",
             "cargo": {
                 "args": [
                     "test",
                     "--no-run",
-                    "--bin=bin_calc",
-                    "--package=bin_calc"
+                    "--bin=binary_calculator",
+                    "--package=binary_calculator"
                 ],
                 "filter": {
-                    "name": "bin_calc",
+                    "name": "binary_calculator",
                     "kind": "bin"
                 }
             },
