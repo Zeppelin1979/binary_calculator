@@ -21,6 +21,14 @@ pub(crate) struct BinaryCalulatorSettings {
     setting_str: String,
     copy_to_clipboard_str: String,
     main_str: String,
+    decimal_str: String,
+    hexadecimal_str: String,
+    octal_str: String,
+    choose_a_theme_str: String,
+    choose_a_language_str: String,
+    light_str: String,
+    dark_str: String,
+    custom_str: String,
 }
 
 impl<'a> BinaryCalulatorSettings {
@@ -31,6 +39,14 @@ impl<'a> BinaryCalulatorSettings {
             setting_str: LOCALES.lookup(&ENGLISH, "settings").unwrap(),
             copy_to_clipboard_str: LOCALES.lookup(&ENGLISH, "copy_to_clipboard").unwrap(),
             main_str: LOCALES.lookup(&ENGLISH, "main").unwrap(),
+            decimal_str: LOCALES.lookup(&ENGLISH, "decimal").unwrap(),
+            hexadecimal_str: LOCALES.lookup(&ENGLISH, "hexadecimal").unwrap(),
+            octal_str: LOCALES.lookup(&ENGLISH, "octal").unwrap(),
+            choose_a_theme_str: LOCALES.lookup(&ENGLISH, "choose_a_theme").unwrap(),
+            choose_a_language_str: LOCALES.lookup(&ENGLISH, "choose_a_language").unwrap(),
+            light_str: LOCALES.lookup(&ENGLISH, "light").unwrap(),
+            dark_str: LOCALES.lookup(&ENGLISH, "dark").unwrap(),
+            custom_str: LOCALES.lookup(&ENGLISH, "custom").unwrap(),
         }
     }
 
@@ -61,10 +77,14 @@ impl<'a> BinaryCalulatorSettings {
 
     pub fn view(&self) -> Element<'a, SettingsMessage> {
         let choose_theme = ThemeType::ALL.iter().fold(
-            column![text("Choose a theme:")].spacing(10),
+            column![text(&self.choose_a_theme_str)].spacing(10),
             |column, theme| {
                 column.push(radio(
-                    format!("{:?}", theme),
+                    match theme {
+                        ThemeType::Light => &self.light_str,
+                        ThemeType::Dark => &self.dark_str,
+                        ThemeType::Custom => &self.custom_str,
+                    },
                     *theme,
                     Some(match self.theme {
                         Theme::Light => ThemeType::Light,
@@ -76,7 +96,7 @@ impl<'a> BinaryCalulatorSettings {
             },
         );
         let choose_language = LanguageType::ALL.iter().fold(
-            column![text("Choose Language:")].spacing(10),
+            column![text(&self.choose_a_language_str)].spacing(10),
             |column, lang| {
                 column.push(radio(
                     format!("{:?}", lang),
@@ -86,9 +106,7 @@ impl<'a> BinaryCalulatorSettings {
                 ))
             },
         );
-        let content = column![horizontal_rule(38), choose_theme, choose_language]
-            .spacing(20)
-            .padding(20);
+        let content = column![horizontal_rule(38), choose_theme, choose_language].spacing(20);
         content.into()
     }
 
@@ -96,6 +114,14 @@ impl<'a> BinaryCalulatorSettings {
         self.setting_str = LOCALES.lookup(lang, "settings").unwrap();
         self.copy_to_clipboard_str = LOCALES.lookup(lang, "copy_to_clipboard").unwrap();
         self.main_str = LOCALES.lookup(lang, "main").unwrap();
+        self.decimal_str = LOCALES.lookup(lang, "decimal").unwrap();
+        self.hexadecimal_str = LOCALES.lookup(lang, "hexadecimal").unwrap();
+        self.octal_str = LOCALES.lookup(lang, "octal").unwrap();
+        self.choose_a_theme_str = LOCALES.lookup(lang, "choose_a_theme").unwrap();
+        self.choose_a_language_str = LOCALES.lookup(lang, "choose_a_language").unwrap();
+        self.light_str = LOCALES.lookup(lang, "light").unwrap();
+        self.dark_str = LOCALES.lookup(lang, "dark").unwrap();
+        self.custom_str = LOCALES.lookup(lang, "custom").unwrap();
     }
 
     pub(crate) fn theme(&self) -> &Theme {
@@ -112,6 +138,18 @@ impl<'a> BinaryCalulatorSettings {
 
     pub(crate) fn main_str(&self) -> &str {
         self.main_str.as_ref()
+    }
+
+    pub(crate) fn decimal_str(&self) -> &str {
+        self.decimal_str.as_ref()
+    }
+
+    pub(crate) fn hexadecimal_str(&self) -> &str {
+        self.hexadecimal_str.as_ref()
+    }
+
+    pub(crate) fn octal_str(&self) -> &str {
+        self.octal_str.as_ref()
     }
 }
 

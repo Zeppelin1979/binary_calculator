@@ -130,22 +130,11 @@ where
             text_size: DEFAULT_TEXT_SIZE,
             padding: DEFAULT_PADDING,
             spacing: DEFAULT_SPACING,
-            content: content,
+            content,
             on_change: Box::new(on_change),
             messages: Vec::new(),
             hex,
         }
-    }
-
-    pub fn decimal_input_widget<F>(
-        value: u32,
-        hex: bool,
-        on_change: F,
-    ) -> DecimalInputWidget<'a, Message, Renderer>
-    where
-        F: 'static + Fn(u32) -> Message + Copy,
-    {
-        DecimalInputWidget::new(value, hex, on_change)
     }
 
     /// Sets the width of the [`BinaryFieldWidget`](BinaryFieldWidget).
@@ -347,11 +336,11 @@ where
                 }
             }
         }
-        if self.messages.len() > 0 {
+        if !self.messages.is_empty() {
             self.messages.clear();
             shell.publish((self.on_change)(self.value));
         }
-        return state;
+        state
     }
 }
 

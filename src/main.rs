@@ -16,23 +16,16 @@ use iced::theme::Theme;
 use iced::widget::{
     button, column, container, pick_list, row, text, text_input, toggler, vertical_rule,
 };
-use iced::window::icon::Icon;
 use iced::{window, Alignment, Element, Length, Sandbox, Settings};
 use messages::Message;
 use num_format::{Locale, ToFormattedString};
 use settings::BinaryCalulatorSettings;
 
 pub fn main() -> iced::Result {
-    let icon = image::io::Reader::open("./img/calculator-icon.png")
-        .unwrap()
-        .decode()
-        .unwrap()
-        .to_rgba8();
     let settings = Settings {
         window: window::Settings {
-            size: (750, 500),
+            size: (800, 500),
             resizable: false,
-            icon: Some(Icon::from_rgba(icon.to_vec(), icon.width(), icon.height()).unwrap()),
             ..Default::default()
         },
         ..Default::default()
@@ -104,106 +97,7 @@ impl Sandbox for BinaryCalculator {
                     self.value = val;
                 }
             }
-            Message::HexCopy(format) => {
-                if let Ok(mut clipboard) = ClipboardContext::new() {
-                    match format {
-                        HexFormats::MotorolaSmall1Block => {
-                            clipboard
-                                .set_contents(format!("{:08x}", self.value))
-                                .unwrap();
-                        }
-                        HexFormats::MotorolaSmall2Blocks => clipboard
-                            .set_contents(format!(
-                                "{:04x} {:04x}",
-                                (self.value >> 16) & 0xFFFF,
-                                self.value & 0xFFFF
-                            ))
-                            .unwrap(),
-                        HexFormats::MotorolaSmall4Blocks => clipboard
-                            .set_contents(format!(
-                                "{:02x} {:02x} {:02x} {:02x}",
-                                (self.value >> 24) & 0xFF,
-                                (self.value >> 16) & 0xFF,
-                                (self.value >> 8) & 0xFF,
-                                self.value & 0xFF
-                            ))
-                            .unwrap(),
-                        HexFormats::MotorolaSmall1BlockWithX => clipboard
-                            .set_contents(format!("{:#010x}", self.value))
-                            .unwrap(),
-                        HexFormats::MotorolaSmall2BlocksWithX => clipboard
-                            .set_contents(format!(
-                                "{:#06x} {:#06x}",
-                                (self.value >> 16) & 0xFFFF,
-                                self.value & 0xFFFF
-                            ))
-                            .unwrap(),
-                        HexFormats::MotorolaSmall4BlocksWithX => clipboard
-                            .set_contents(format!(
-                                "{:#04x} {:#04x} {:#04x} {:#04x}",
-                                (self.value >> 24) & 0xFF,
-                                (self.value >> 16) & 0xFF,
-                                (self.value >> 8) & 0xFF,
-                                self.value & 0xFF
-                            ))
-                            .unwrap(),
-                        HexFormats::MotorolaSmall4BlocksWithXWithBrackets => clipboard
-                            .set_contents(format!(
-                                "[{:#04x}] [{:#04x}] [{:#04x}] [{:#04x}]",
-                                (self.value >> 24) & 0xFF,
-                                (self.value >> 16) & 0xFF,
-                                (self.value >> 8) & 0xFF,
-                                self.value & 0xFF
-                            ))
-                            .unwrap(),
-                        HexFormats::MotorolaArray => clipboard
-                            .set_contents(format!(
-                                "[{:#04x}, {:#04x}, {:#04x}, {:#04x}]",
-                                (self.value >> 24) & 0xFF,
-                                (self.value >> 16) & 0xFF,
-                                (self.value >> 8) & 0xFF,
-                                self.value & 0xFF
-                            ))
-                            .unwrap(),
-                        HexFormats::Intel4Blocks => clipboard
-                            .set_contents(format!(
-                                "{:04x} {:04x} {:04x} {:04x}",
-                                self.value & 0xFF,
-                                (self.value >> 8) & 0xFF,
-                                (self.value >> 16) & 0xFF,
-                                (self.value >> 24) & 0xFF
-                            ))
-                            .unwrap(),
-                        HexFormats::Intel4BlocksWithX => clipboard
-                            .set_contents(format!(
-                                "{:#04x} {:#04x} {:#04x} {:#04x}",
-                                self.value & 0xFF,
-                                (self.value >> 8) & 0xFF,
-                                (self.value >> 16) & 0xFF,
-                                (self.value >> 24) & 0xFF
-                            ))
-                            .unwrap(),
-                        HexFormats::Intel4BlocksWithXWitchBrackets => clipboard
-                            .set_contents(format!(
-                                "[{:#04x}] [{:#04x}] [{:#04x}] [{:#04x}]",
-                                self.value & 0xFF,
-                                (self.value >> 8) & 0xFF,
-                                (self.value >> 16) & 0xFF,
-                                (self.value >> 24) & 0xFF
-                            ))
-                            .unwrap(),
-                        HexFormats::IntelArray => clipboard
-                            .set_contents(format!(
-                                "[{:#04x}, {:#04x}, {:#04x}, {:#04x}]",
-                                self.value & 0xFF,
-                                (self.value >> 8) & 0xFF,
-                                (self.value >> 16) & 0xFF,
-                                (self.value >> 24) & 0xFF
-                            ))
-                            .unwrap(),
-                    };
-                }
-            }
+            Message::HexCopy(format) => self.copy_hex_to_clipboard(format),
             Message::DecCopy(format) => {
                 if let Ok(mut clipboard) = ClipboardContext::new() {
                     match format {
@@ -259,8 +153,7 @@ impl Sandbox for BinaryCalculator {
         let main_button = button(self.settings.main_str()).on_press(Message::Main);
         let settings_button = button(self.settings.setting_str()).on_press(Message::Settings);
         let header_row = row![main_button, settings_button].spacing(10);
-        let content: Element<Message>;
-        match self.page {
+        let content: Element<Message> = match self.page {
             Pages::Main => {
                 let shift_left_button = button("<<").on_press(Message::ShiftLeft);
                 let binary_text_input = text_input(
@@ -334,7 +227,20 @@ impl Sandbox for BinaryCalculator {
                     DecimalInputWidget::new(self.value, false, Message::InputU32Changed);
                 let hex_input_widget =
                     DecimalInputWidget::new(self.value, true, Message::InputU32Changed);
-                content = column![
+                let octal_text_input = text_input(
+                    "",
+                    format!(
+                        "{:02o} {:03o} {:03o} {:03o}",
+                        (self.value >> 27) & 0o777,
+                        (self.value >> 18) & 0o777,
+                        (self.value >> 9) & 0o777,
+                        self.value & 0o777
+                    )
+                    .as_str(),
+                    Message::DecInputChanged,
+                )
+                .width(Length::Units(150));
+                column![
                     row![
                         shift_left_button,
                         binary_text_input,
@@ -351,7 +257,7 @@ impl Sandbox for BinaryCalculator {
                     binary_field_widget,
                     row![
                         column![
-                            text("Hexadecimal"),
+                            text(self.settings.hexadecimal_str()),
                             hexadecimal_text_input,
                             hex_pick_list,
                             hex_input_widget,
@@ -359,27 +265,24 @@ impl Sandbox for BinaryCalculator {
                         .spacing(10),
                         vertical_rule(38),
                         column![
-                            row![text("Decimal"), signed_toogler].spacing(10),
+                            row![text(self.settings.decimal_str()), signed_toogler].spacing(10),
                             decimal_text_input,
                             dec_pick_list,
                             decimal_input_widget,
                         ]
                         .spacing(10),
                         vertical_rule(38),
-                        column![text("Octal")].spacing(10),
+                        column![text(self.settings.octal_str()), octal_text_input].spacing(10),
                     ]
                     .spacing(20),
                 ]
                 .spacing(20)
-                .padding(20)
                 .max_width(800)
-                .into();
+                .into()
             }
-            Pages::Settings => {
-                content = self.settings.view().map(Message::SettingsMessage);
-            }
-        }
-        let content2 = column![header_row, content];
+            Pages::Settings => self.settings.view().map(Message::SettingsMessage),
+        };
+        let content2 = column![header_row, content].padding(20).spacing(20);
         container(content2)
             .width(Length::Fill)
             .height(Length::Fill)
@@ -390,5 +293,108 @@ impl Sandbox for BinaryCalculator {
 
     fn theme(&self) -> Theme {
         self.settings.theme().clone()
+    }
+}
+
+impl BinaryCalculator {
+    fn copy_hex_to_clipboard(&self, format: HexFormats) {
+        if let Ok(mut clipboard) = ClipboardContext::new() {
+            match format {
+                HexFormats::MotorolaSmall1Block => {
+                    clipboard
+                        .set_contents(format!("{:08x}", self.value))
+                        .unwrap();
+                }
+                HexFormats::MotorolaSmall2Blocks => clipboard
+                    .set_contents(format!(
+                        "{:04x} {:04x}",
+                        (self.value >> 16) & 0xFFFF,
+                        self.value & 0xFFFF
+                    ))
+                    .unwrap(),
+                HexFormats::MotorolaSmall4Blocks => clipboard
+                    .set_contents(format!(
+                        "{:02x} {:02x} {:02x} {:02x}",
+                        (self.value >> 24) & 0xFF,
+                        (self.value >> 16) & 0xFF,
+                        (self.value >> 8) & 0xFF,
+                        self.value & 0xFF
+                    ))
+                    .unwrap(),
+                HexFormats::MotorolaSmall1BlockWithX => clipboard
+                    .set_contents(format!("{:#010x}", self.value))
+                    .unwrap(),
+                HexFormats::MotorolaSmall2BlocksWithX => clipboard
+                    .set_contents(format!(
+                        "{:#06x} {:#06x}",
+                        (self.value >> 16) & 0xFFFF,
+                        self.value & 0xFFFF
+                    ))
+                    .unwrap(),
+                HexFormats::MotorolaSmall4BlocksWithX => clipboard
+                    .set_contents(format!(
+                        "{:#04x} {:#04x} {:#04x} {:#04x}",
+                        (self.value >> 24) & 0xFF,
+                        (self.value >> 16) & 0xFF,
+                        (self.value >> 8) & 0xFF,
+                        self.value & 0xFF
+                    ))
+                    .unwrap(),
+                HexFormats::MotorolaSmall4BlocksWithXWithBrackets => clipboard
+                    .set_contents(format!(
+                        "[{:#04x}] [{:#04x}] [{:#04x}] [{:#04x}]",
+                        (self.value >> 24) & 0xFF,
+                        (self.value >> 16) & 0xFF,
+                        (self.value >> 8) & 0xFF,
+                        self.value & 0xFF
+                    ))
+                    .unwrap(),
+                HexFormats::MotorolaArray => clipboard
+                    .set_contents(format!(
+                        "[{:#04x}, {:#04x}, {:#04x}, {:#04x}]",
+                        (self.value >> 24) & 0xFF,
+                        (self.value >> 16) & 0xFF,
+                        (self.value >> 8) & 0xFF,
+                        self.value & 0xFF
+                    ))
+                    .unwrap(),
+                HexFormats::Intel4Blocks => clipboard
+                    .set_contents(format!(
+                        "{:04x} {:04x} {:04x} {:04x}",
+                        self.value & 0xFF,
+                        (self.value >> 8) & 0xFF,
+                        (self.value >> 16) & 0xFF,
+                        (self.value >> 24) & 0xFF
+                    ))
+                    .unwrap(),
+                HexFormats::Intel4BlocksWithX => clipboard
+                    .set_contents(format!(
+                        "{:#04x} {:#04x} {:#04x} {:#04x}",
+                        self.value & 0xFF,
+                        (self.value >> 8) & 0xFF,
+                        (self.value >> 16) & 0xFF,
+                        (self.value >> 24) & 0xFF
+                    ))
+                    .unwrap(),
+                HexFormats::Intel4BlocksWithXWitchBrackets => clipboard
+                    .set_contents(format!(
+                        "[{:#04x}] [{:#04x}] [{:#04x}] [{:#04x}]",
+                        self.value & 0xFF,
+                        (self.value >> 8) & 0xFF,
+                        (self.value >> 16) & 0xFF,
+                        (self.value >> 24) & 0xFF
+                    ))
+                    .unwrap(),
+                HexFormats::IntelArray => clipboard
+                    .set_contents(format!(
+                        "[{:#04x}, {:#04x}, {:#04x}, {:#04x}]",
+                        self.value & 0xFF,
+                        (self.value >> 8) & 0xFF,
+                        (self.value >> 16) & 0xFF,
+                        (self.value >> 24) & 0xFF
+                    ))
+                    .unwrap(),
+            };
+        }
     }
 }

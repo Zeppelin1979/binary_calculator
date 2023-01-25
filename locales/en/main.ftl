@@ -1,3 +1,11 @@
 settings = Settings
 copy_to_clipboard = Copy to clipboard
 main = Main
+decimal = Decimal
+hexadecimal = Hexadecimal
+octal = Octal
+choose_a_theme = Choose a theme:
+choose_a_language = Choose a language:
+light = Light
+dark = Dark
+custom = Custon

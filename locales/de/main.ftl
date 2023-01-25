@@ -1,3 +1,11 @@
 settings = Einstellungen
 copy_to_clipboard = In Zwischenablage kopieren
 main = Hauptfenster
+decimal = Dezimal
+hexadecimal = Hexadezimal
+octal = Oktal
+choose_a_theme = Thema auswählen:
+choose_a_language = Sprache auswählen:
+light = Hell
+dark = Dunkel
+custom = Benutzerspezifisch

@@ -1,6 +1,6 @@
 [package]
 name = "binary_calculator"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Robert Ernst"]
 edition = "2021"
 description = "Binary Calculator to calculate numbers from bits"
@@ -15,5 +15,4 @@ fluent-templates = "0.8.0"
 iced = {version="0.7.0"}
 iced_native = "0.8.0"
 iced_style = "0.6.0"
-image = "0.24.5"
 num-format = "0.4.4"
