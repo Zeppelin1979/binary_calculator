@@ -11,7 +11,7 @@ const DEFAULT_PADDING: u16 = 5;
 /// The default spacing around the tabs.
 const DEFAULT_SPACING: u16 = 0;
 
-pub struct DecimalInputWidget<'a, Message, Renderer>
+pub struct NumericInputWidget<'a, Message, Renderer>
 where
     Renderer: iced_native::Renderer + iced_native::text::Renderer,
     Renderer::Theme: text::StyleSheet
@@ -36,89 +36,97 @@ where
     /// The on_change event of the [`BinaryFieldWidget`](BinaryFieldWidget).
     on_change: Box<dyn Fn(u32) -> Message>,
     messages: Vec<DecimalInputWidgetMessage>,
-    hex: bool,
+    input_type: InputType,
 }
 
-impl<'a, Message, Renderer> DecimalInputWidget<'a, Message, Renderer>
+impl<'a, Message, Renderer> NumericInputWidget<'a, Message, Renderer>
 where
     Renderer: 'a + iced_native::Renderer + iced_native::text::Renderer,
     Renderer::Theme: text::StyleSheet
         + iced_native::widget::container::StyleSheet
         + iced_native::widget::button::StyleSheet,
 {
-    pub fn new<F>(value: u32, hex: bool, on_change: F) -> Self
+    pub fn new<F>(value: u32, input_type: InputType, on_change: F) -> Self
     where
         F: 'static + Fn(u32) -> Message + Copy,
     {
         let content;
-        let dec_0_button: Button<'a, DecimalInputWidgetMessage, Renderer> = button("0")
+        let button_0: Button<'a, DecimalInputWidgetMessage, Renderer> = button("0")
             .on_press(DecimalInputWidgetMessage::Button0)
             .width(Length::Units(40));
-        let dec_1_button = button("1")
+        let button_1 = button("1")
             .on_press(DecimalInputWidgetMessage::Button1)
             .width(Length::Units(40));
-        let dec_2_button = button("2")
+        let button_2 = button("2")
             .on_press(DecimalInputWidgetMessage::Button2)
             .width(Length::Units(40));
-        let dec_3_button = button("3")
+        let button_3 = button("3")
             .on_press(DecimalInputWidgetMessage::Button3)
             .width(Length::Units(40));
-        let dec_4_button = button("4")
+        let button_4 = button("4")
             .on_press(DecimalInputWidgetMessage::Button4)
             .width(Length::Units(40));
-        let dec_5_button = button("5")
+        let button_5 = button("5")
             .on_press(DecimalInputWidgetMessage::Button5)
             .width(Length::Units(40));
-        let dec_6_button = button("6")
+        let button_6 = button("6")
             .on_press(DecimalInputWidgetMessage::Button6)
             .width(Length::Units(40));
-        let dec_7_button = button("7")
+        let button_7 = button("7")
             .on_press(DecimalInputWidgetMessage::Button7)
             .width(Length::Units(40));
-        let dec_8_button = button("8")
-            .on_press(DecimalInputWidgetMessage::Button8)
-            .width(Length::Units(40));
-        let dec_9_button = button("9")
-            .on_press(DecimalInputWidgetMessage::Button9)
-            .width(Length::Units(40));
-        let dec_sign_button = button("±")
-            .on_press(DecimalInputWidgetMessage::ButtonSignum)
-            .width(Length::Units(40));
-        let dec_res_button = button("<-")
-            .on_press(DecimalInputWidgetMessage::ButtonBackspace)
-            .width(Length::Units(40));
-        if hex {
-            let hex_a_button = button("A")
-                .on_press(DecimalInputWidgetMessage::ButtonA)
+        if input_type != InputType::Octal {
+            let button_8 = button("8")
+                .on_press(DecimalInputWidgetMessage::Button8)
                 .width(Length::Units(40));
-            let hex_b_button = button("B")
-                .on_press(DecimalInputWidgetMessage::ButtonB)
+            let button_9 = button("9")
+                .on_press(DecimalInputWidgetMessage::Button9)
                 .width(Length::Units(40));
-            let hex_c_button = button("C")
-                .on_press(DecimalInputWidgetMessage::ButtonC)
+            let button_sign = button("±")
+                .on_press(DecimalInputWidgetMessage::ButtonSignum)
                 .width(Length::Units(40));
-            let hex_d_button = button("D")
-                .on_press(DecimalInputWidgetMessage::ButtonD)
+            let button_bsp = button("<-")
+                .on_press(DecimalInputWidgetMessage::ButtonBackspace)
                 .width(Length::Units(40));
-            let hex_e_button = button("E")
-                .on_press(DecimalInputWidgetMessage::ButtonE)
-                .width(Length::Units(40));
-            let hex_f_button = button("F")
-                .on_press(DecimalInputWidgetMessage::ButtonF)
-                .width(Length::Units(40));
-            content = column![
-                row![dec_7_button, dec_8_button, dec_9_button, hex_f_button].spacing(10),
-                row![dec_4_button, dec_5_button, dec_6_button, hex_e_button].spacing(10),
-                row![dec_1_button, dec_2_button, dec_3_button, hex_d_button].spacing(10),
-                row![dec_0_button, hex_a_button, hex_b_button, hex_c_button].spacing(10),
-            ]
-            .spacing(10);
+            if input_type == InputType::Hexadecimal {
+                let button_a = button("A")
+                    .on_press(DecimalInputWidgetMessage::ButtonA)
+                    .width(Length::Units(40));
+                let button_b = button("B")
+                    .on_press(DecimalInputWidgetMessage::ButtonB)
+                    .width(Length::Units(40));
+                let button_c = button("C")
+                    .on_press(DecimalInputWidgetMessage::ButtonC)
+                    .width(Length::Units(40));
+                let button_d = button("D")
+                    .on_press(DecimalInputWidgetMessage::ButtonD)
+                    .width(Length::Units(40));
+                let button_e = button("E")
+                    .on_press(DecimalInputWidgetMessage::ButtonE)
+                    .width(Length::Units(40));
+                let button_f = button("F")
+                    .on_press(DecimalInputWidgetMessage::ButtonF)
+                    .width(Length::Units(40));
+                content = column![
+                    row![button_7, button_8, button_9, button_f].spacing(10),
+                    row![button_4, button_5, button_6, button_e].spacing(10),
+                    row![button_1, button_2, button_3, button_d].spacing(10),
+                    row![button_0, button_a, button_b, button_c].spacing(10),
+                ]
+                .spacing(10);
+            } else {
+                content = column![
+                    row![button_7, button_8, button_9].spacing(10),
+                    row![button_4, button_5, button_6].spacing(10),
+                    row![button_1, button_2, button_3].spacing(10),
+                    row![button_0, button_sign, button_bsp].spacing(10),
+                ]
+                .spacing(10);
+            }
         } else {
             content = column![
-                row![dec_7_button, dec_8_button, dec_9_button].spacing(10),
-                row![dec_4_button, dec_5_button, dec_6_button].spacing(10),
-                row![dec_1_button, dec_2_button, dec_3_button].spacing(10),
-                row![dec_0_button, dec_sign_button, dec_res_button].spacing(10),
+                row![button_4, button_5, button_6, button_7].spacing(10),
+                row![button_0, button_1, button_2, button_3].spacing(10),
             ]
             .spacing(10);
         }
@@ -133,7 +141,7 @@ where
             content,
             on_change: Box::new(on_change),
             messages: Vec::new(),
-            hex,
+            input_type,
         }
     }
 
@@ -191,7 +199,7 @@ where
     }
 }
 
-impl<'a, Message, Renderer> Widget<Message, Renderer> for DecimalInputWidget<'a, Message, Renderer>
+impl<'a, Message, Renderer> Widget<Message, Renderer> for NumericInputWidget<'a, Message, Renderer>
 where
     Renderer: iced_native::Renderer + iced_native::text::Renderer,
     Renderer::Theme: text::StyleSheet
@@ -283,7 +291,11 @@ where
             clipboard,
             &mut int_shell,
         );
-        let base = if self.hex { 16 } else { 10 };
+        let base = match self.input_type {
+            InputType::Octal => 8,
+            InputType::Decimal => 10,
+            InputType::Hexadecimal => 16,
+        };
         for message in self.messages.iter() {
             match message {
                 DecimalInputWidgetMessage::Button0 => self.value = self.value.wrapping_mul(10),
@@ -366,7 +378,7 @@ pub enum DecimalInputWidgetMessage {
     ButtonF,
 }
 
-impl<'a, Message, Renderer> From<DecimalInputWidget<'a, Message, Renderer>>
+impl<'a, Message, Renderer> From<NumericInputWidget<'a, Message, Renderer>>
     for Element<'a, Message, Renderer>
 where
     Renderer: 'a + iced_native::Renderer + iced_native::text::Renderer,
@@ -375,7 +387,14 @@ where
         + iced_native::widget::button::StyleSheet,
     Message: Clone + 'a,
 {
-    fn from(value: DecimalInputWidget<'a, Message, Renderer>) -> Self {
+    fn from(value: NumericInputWidget<'a, Message, Renderer>) -> Self {
         Self::new(value)
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum InputType {
+    Octal,
+    Decimal,
+    Hexadecimal,
 }

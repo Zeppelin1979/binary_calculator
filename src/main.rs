@@ -1,16 +1,15 @@
 mod binary_field_widget;
 mod dec_formats;
-mod decimal_input_widget;
 mod hex_formats;
 mod language_type;
 mod messages;
+mod numeric_input_widget;
 mod settings;
 mod theme_type;
 
 use binary_field_widget::BinaryFieldWidget;
 use cli_clipboard::{ClipboardContext, ClipboardProvider};
 use dec_formats::DecFormats;
-use decimal_input_widget::DecimalInputWidget;
 use hex_formats::HexFormats;
 use iced::theme::Theme;
 use iced::widget::{
@@ -19,12 +18,13 @@ use iced::widget::{
 use iced::{window, Alignment, Element, Length, Sandbox, Settings};
 use messages::Message;
 use num_format::{Locale, ToFormattedString};
+use numeric_input_widget::{InputType, NumericInputWidget};
 use settings::BinaryCalulatorSettings;
 
 pub fn main() -> iced::Result {
     let settings = Settings {
         window: window::Settings {
-            size: (800, 500),
+            size: (885, 450),
             resizable: false,
             ..Default::default()
         },
@@ -34,7 +34,6 @@ pub fn main() -> iced::Result {
 }
 
 struct BinaryCalculator {
-    input_value: String,
     value: u32,
     signed: bool,
     page: Pages,
@@ -44,7 +43,6 @@ struct BinaryCalculator {
 impl Default for BinaryCalculator {
     fn default() -> Self {
         Self {
-            input_value: Default::default(),
             value: Default::default(),
             signed: false,
             page: Pages::default(),
@@ -78,7 +76,6 @@ impl Sandbox for BinaryCalculator {
 
     fn update(&mut self, message: Message) {
         match message {
-            Message::InputChanged(value) => self.input_value = value,
             Message::ShiftLeft => self.value <<= 1,
             Message::ShiftRight => self.value >>= 1,
             Message::Not => self.value = !self.value,
@@ -116,34 +113,6 @@ impl Sandbox for BinaryCalculator {
             Message::SignToggled(value) => self.signed = value,
             Message::Settings => self.page = Pages::Settings,
             Message::Main => self.page = Pages::Main,
-            Message::Char3InputChanged(value) => {
-                if value.len() == 1 {
-                    let char = (value.bytes().next().unwrap() as u32) << 24;
-                    self.value &= 0x00FFFFFF;
-                    self.value |= char;
-                }
-            }
-            Message::Char2InputChanged(value) => {
-                if value.len() == 1 {
-                    let char = (value.bytes().next().unwrap() as u32) << 16;
-                    self.value &= 0xFF00FFFF;
-                    self.value |= char;
-                }
-            }
-            Message::Char1InputChanged(value) => {
-                if value.len() == 1 {
-                    let char = (value.bytes().next().unwrap() as u32) << 8;
-                    self.value &= 0xFFFF00FF;
-                    self.value |= char;
-                }
-            }
-            Message::Char0InputChanged(value) => {
-                if value.len() == 1 {
-                    let char = value.bytes().next().unwrap() as u32;
-                    self.value &= 0xFFFFFF00;
-                    self.value |= char;
-                }
-            }
             Message::InputU32Changed(value) => self.value = value,
             Message::SettingsMessage(msg) => self.settings.update(msg),
         }
@@ -156,37 +125,8 @@ impl Sandbox for BinaryCalculator {
         let content: Element<Message> = match self.page {
             Pages::Main => {
                 let shift_left_button = button("<<").on_press(Message::ShiftLeft);
-                let binary_text_input = text_input(
-                    "",
-                    format!("{:032b}", self.value).as_str(),
-                    Message::InputChanged,
-                );
                 let shift_right_button = button(">>").on_press(Message::ShiftRight);
                 let not_button = button("Not").on_press(Message::Not);
-                let char3_text_input = text_input(
-                    "",
-                    format!("{}", char::from_u32((self.value >> 24) & 0xFF).unwrap()).as_str(),
-                    Message::Char3InputChanged,
-                )
-                .width(Length::Units(20));
-                let char2_text_input = text_input(
-                    "",
-                    format!("{}", char::from_u32((self.value >> 16) & 0xFF).unwrap()).as_str(),
-                    Message::Char2InputChanged,
-                )
-                .width(Length::Units(20));
-                let char1_text_input = text_input(
-                    "",
-                    format!("{}", char::from_u32((self.value >> 8) & 0xFF).unwrap()).as_str(),
-                    Message::Char1InputChanged,
-                )
-                .width(Length::Units(20));
-                let char0_text_input = text_input(
-                    "",
-                    format!("{}", char::from_u32((self.value) & 0xFF).unwrap()).as_str(),
-                    Message::Char0InputChanged,
-                )
-                .width(Length::Units(20));
                 let binary_field_widget =
                     BinaryFieldWidget::new(self.value, Message::InputU32Changed);
                 let hexadecimal_text_input = text_input(
@@ -223,10 +163,18 @@ impl Sandbox for BinaryCalculator {
                 let dec_pick_list = pick_list(&DecFormats::ALL[..], None, Message::DecCopy)
                     .placeholder(self.settings.copy_to_clipboard_str())
                     .width(Length::Units(200));
-                let decimal_input_widget =
-                    DecimalInputWidget::new(self.value, false, Message::InputU32Changed);
-                let hex_input_widget =
-                    DecimalInputWidget::new(self.value, true, Message::InputU32Changed);
+                let decimal_input_widget = NumericInputWidget::new(
+                    self.value,
+                    InputType::Decimal,
+                    Message::InputU32Changed,
+                );
+                let hex_input_widget = NumericInputWidget::new(
+                    self.value,
+                    InputType::Hexadecimal,
+                    Message::InputU32Changed,
+                );
+                let octal_input_widget =
+                    NumericInputWidget::new(self.value, InputType::Octal, Message::InputU32Changed);
                 let octal_text_input = text_input(
                     "",
                     format!(
@@ -243,18 +191,12 @@ impl Sandbox for BinaryCalculator {
                 column![
                     row![
                         shift_left_button,
-                        binary_text_input,
+                        binary_field_widget,
                         shift_right_button,
                         not_button,
-                        text("Char"),
-                        char3_text_input,
-                        char2_text_input,
-                        char1_text_input,
-                        char0_text_input,
                     ]
                     .spacing(4)
                     .align_items(Alignment::Center),
-                    binary_field_widget,
                     row![
                         column![
                             text(self.settings.hexadecimal_str()),
@@ -272,12 +214,17 @@ impl Sandbox for BinaryCalculator {
                         ]
                         .spacing(10),
                         vertical_rule(38),
-                        column![text(self.settings.octal_str()), octal_text_input].spacing(10),
+                        column![
+                            text(self.settings.octal_str()),
+                            octal_text_input,
+                            octal_input_widget
+                        ]
+                        .spacing(10),
                     ]
                     .spacing(20),
                 ]
                 .spacing(20)
-                .max_width(800)
+                .max_width(900)
                 .into()
             }
             Pages::Settings => self.settings.view().map(Message::SettingsMessage),
